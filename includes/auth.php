@@ -4,6 +4,11 @@ require_once __DIR__ . '/functions.php';
 function login_user($username, $password)
 {
     $pdo = get_pdo();
+    if ($pdo instanceof SafePDO) {
+        flash('error', 'Database unavailable. Configure a working PostgreSQL host, user, and password.');
+        return false;
+    }
+
     $user = user_by_username($pdo, $username);
 
     if (!$user || !password_verify($password, $user['password_hash'])) {

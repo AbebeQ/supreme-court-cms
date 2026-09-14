@@ -4,6 +4,11 @@ require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/csrf.php';
 
+$pdo = get_pdo();
+if ($pdo instanceof SafePDO) {
+    flash('error', 'Database unavailable. Configure a working PostgreSQL host, user, and password.');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf($_POST['csrf_token'] ?? '')) {
         flash('error', 'Invalid request token.');

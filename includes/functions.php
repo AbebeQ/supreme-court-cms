@@ -2,10 +2,14 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 
-function get_pdo()
+function get_pdo(): ?object
 {
     global $pdo;
-    return $pdo;
+    if ($pdo instanceof PDO || $pdo instanceof SafePDO) {
+        return $pdo;
+    }
+
+    return null;
 }
 
 function e($value)

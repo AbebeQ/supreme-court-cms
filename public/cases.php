@@ -9,6 +9,27 @@ $viewerRole = current_user_role();
 $viewerId = (int)($_SESSION['user_id'] ?? 0);
 $viewerName = current_user_full_name();
 
+if (!$pdo) {
+    $title = 'Cases';
+    include __DIR__ . '/../includes/header.php';
+    ?>
+    <section class="page-head">
+        <div>
+            <span class="page-kicker">Registry</span>
+            <h1>Cases</h1>
+        </div>
+    </section>
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Database unavailable</h2>
+        </div>
+        <p class="empty-state">The PostgreSQL connection could not be established. Set a working DB_HOST, DB_PORT, DB_NAME, DB_USER, and DB_PASS environment value or a valid DATABASE_URL.</p>
+    </section>
+    <?php
+    include __DIR__ . '/../includes/footer.php';
+    exit;
+}
+
 if (in_array($viewerRole, ['ADMIN', 'CLERK'], true)) {
     $cases = $pdo->query('SELECT c.*, u.full_name AS judge_name FROM cases c LEFT JOIN users u ON u.id = c.assigned_judge ORDER BY c.filing_date DESC')->fetchAll(PDO::FETCH_ASSOC);
 } elseif ($viewerRole === 'JUDGE') {

@@ -4,11 +4,34 @@ require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/csrf.php';
 
+$pdo = get_pdo();
 $canCreateByClerk = is_logged_in() && in_array(strtoupper($_SESSION['user_role'] ?? ''), ['CLERK', 'ADMIN'], true);
 $defaultRole = 'LITIGANT';
 
 if (!$canCreateByClerk && is_logged_in()) {
     redirect('dashboard.php');
+}
+
+if (!$pdo) {
+    flash('error', 'Database unavailable. Configure a working PostgreSQL host and credentials.');
+    include __DIR__ . '/../includes/header.php';
+    ?>
+    <section class="login-wrap">
+        <div class="login-card">
+            <div class="login-header">
+                <span class="login-logo">⚖</span>
+                <h1><?= e(APP_NAME) ?></h1>
+                <p>Create an account</p>
+            </div>
+            <div class="flash flash-error">Database unavailable. Configure a working PostgreSQL host and credentials.</div>
+            <div class="mini-link-wrap">
+                <a class="mini-link" href="<?= e(BASE_URL . '/login.php') ?>">Already have an account? Login</a>
+            </div>
+        </div>
+    </section>
+    <?php
+    include __DIR__ . '/../includes/footer.php';
+    exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

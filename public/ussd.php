@@ -145,7 +145,8 @@ function render_hearings_list($pdo, $user)
 
     $buffer = [];
     foreach ($rows as $row) {
-        $buffer[] = 'Case ' . ($row['case_id'] ?? 'NA') . ' - ' . date('d M Y', strtotime($row['hearing_date'])) . ' - ' . $row['Courtroom'];
+        $courtroom = $row['Courtroom'] ?? $row['courtroom'] ?? $row['Court_Room'] ?? 'Main Court';
+        $buffer[] = 'Case ' . ($row['case_id'] ?? 'NA') . ' - ' . date('d M Y', strtotime($row['hearing_date'])) . ' - ' . $courtroom;
     }
 
     return implode('\n', $buffer);
