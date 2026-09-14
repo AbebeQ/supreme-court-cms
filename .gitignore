@@ -1,4 +1,15 @@
-config/config.php
-config/database.php
+# PHP project runtime files that should not be committed
+.env
+.env.*
+!.env.example
+
+# Upload directory should keep its structure but not binary uploads
 uploads/*
 !uploads/.gitkeep
+
+# Local environment-only process artifacts
+.DS_Store
+node_modules/
+/vendor/
+*.log
+
