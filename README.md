@@ -1,12 +1,14 @@
-# 🏛️ Supreme Court Case Management System — PHP + PostgreSQL
+# Supreme Court Case Management System
 
-A complete, production-ready implementation using **plain PHP (no framework)** and **PostgreSQL**. It follows a lightweight MVC pattern with PDO, secure password hashing, CSRF protection, and role-based access control.
+A plain PHP + PostgreSQL case management system for a court registry and case workflow.
 
----
+## Project scope
 
-## 📁 Project Structure
+The repository contains a lightweight PHP web application that serves the route flow through the router and public files. The main app logic is implemented as route scripts in `public/`, with shared configuration and utility functions loaded from `config/` and `includes/`.
 
-```
+## Repository layout
+
+```text
 supreme-court-cms/
 ├── config/
 │   ├── config.php
@@ -21,63 +23,85 @@ supreme-court-cms/
 │   ├── index.php
 │   ├── login.php
 │   ├── logout.php
+│   ├── register.php
 │   ├── dashboard.php
 │   ├── cases.php
 │   ├── case_view.php
 │   ├── case_create.php
 │   ├── hearing_create.php
 │   ├── order_create.php
-│   ├── document_upload.php
 │   ├── party_add.php
+│   ├── document_upload.php
 │   ├── users.php
-│   └── assets/
-│       └── css/style.css
-├── uploads/
+│   └── ussd.php
 ├── sql/
 │   └── schema.sql
-└── README.md
+├── uploads/
+├── router.php
+└── .env
 ```
 
----
+## Environment-driven configuration
 
-## 🗄️ 1. PostgreSQL Schema — `sql/schema.sql`
+The PHP app reads its runtime values from a repository-level `.env` file via the loader in `config/config.php`.
 
-```sql
--- =========================================================
--- Supreme Court Case Management System - PostgreSQL Schema
--- =========================================================
+The environment includes the standard PostgreSQL configuration variables:
 
-DROP TABLE IF EXISTS audit_log CASCADE;
-DROP TABLE IF EXISTS orders CASCADE;
-DROP TABLE IF EXISTS hearings CASCADE;
-DROP TABLE IF EXISTS documents CASCADE;
-DROP TABLE IF EXISTS parties CASCADE;
-DROP TABLE IF EXISTS cases CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=supreme_court_cms
+DB_USER=postgres
+DB_PASS=postgres
+```
 
--- Enums
-CREATE TYPE user_role AS ENUM ('ADMIN', 'JUDGE', 'CLERK', 'ADVOCATE', 'LITIGANT');
-CREATE TYPE case_status AS ENUM ('FILED', 'PENDING', 'HEARING', 'JUDGMENT', 'CLOSED', 'APPEALED');
-CREATE TYPE case_type AS ENUM ('CIVIL', 'CRIMINAL', 'CONSTITUTIONAL', 'WRIT', 'APPEAL');
-CREATE TYPE party_type AS ENUM ('PETITIONER', 'RESPONDENT', 'APPELLANT', 'DEFENDANT');
+It also supports a full PostgreSQL URL as `DATABASE_URL` and a fallback database pair used by `config/database.php`.
 
--- Users
-CREATE TABLE users (
-    id              SERIAL PRIMARY KEY,
-    username        VARCHAR(50) UNIQUE NOT NULL,
-    email           VARCHAR(120) UNIQUE NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL,
-    full_name       VARCHAR(150) NOT NULL,
-    role            user_role NOT NULL DEFAULT 'LITIGANT',
-    phone           VARCHAR(20),
-    address         TEXT,
-    is_active       BOOLEAN DEFAULT TRUE,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+Africa’s Talking credentials are also expected in the environment:
 
--- Cases
-CREATE TABLE cases (
-    id              SERIAL PRIMARY KEY,
+```env
+AT_USERNAME=sandbox
+AT_API_KEY=replace-with-api-key
+```
+
+The `.env` file should never be committed. The repository `.gitignore` excludes `.env` and `.env.*` while keeping `uploads/` and local artifacts out of source control.
+
+## Database
+
+The database schema file is `sql/schema.sql`. It defines the app tables and the typed role/status values used by the route files.
+
+The implemented roles reflect the schema and access-control checks:
+
+- `ADMIN`
+- `JUDGE`
+- `CLERK`
+- `ADVOCATE`
+- `LITIGANT`
+
+## Local launch
+
+Use the built-in PHP development server with the repository router:
+
+```sh
+php -S 127.0.0.1:8080 router.php
+```
+
+Then navigate to any route file under `public/` using the route base defined in `config/config.php`:
+
+```text
+http://127.0.0.1:8080/public/login.php
+```
+
+The router forwards the request path into the public route layer and keeps the application accessible through a single entrypoint.
+
+## USSD support
+
+The workspace includes `public/ussd.php`, a callback route that reads payload fields such as `phoneNumber`, `phone`, `msisdn`, `serviceCode`, `text`, and compares the normalized inbound phone number to the user phone field stored in the database. It returns a role-aware USSD menu or lookup behavior and is designed to be served by a public URL reachable by Africa’s Talking.
+
+## Note
+
+The project is intentionally plain PHP with no framework dependency. It stores uploaded documents beneath `uploads/`, creates database access through PDO and a `SafePDO` fallback, and relies on environment variables rather than ship secrets directly in source files.
+
     case_number     VARCHAR(50) UNIQUE NOT NULL,
     title           VARCHAR(300) NOT NULL,
     description     TEXT,
