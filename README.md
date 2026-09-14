@@ -173,60 +173,41 @@ VALUES (
 
 ---
 
-## ⚙️ 2. Configuration — `config/config.php`
+## ⚙️ 2. Configuration — environment variables and `.env`
 
-```php
-<?php
-// Application config
-define('APP_NAME', 'Supreme Court CMS');
-define('BASE_URL', '/supreme-court-cms/public');
-define('UPLOAD_DIR', __DIR__ . '/../uploads/');
-define('UPLOAD_URL', BASE_URL . '/../uploads/');
-define('SESSION_LIFETIME', 3600);
+The project reads configuration from the environment instead of storing credentials in the committed PHP source. Create a local `.env` file in the project root and provide the values you want the PHP process to consume:
 
-// Database (PostgreSQL)
-define('DB_HOST', 'localhost');
-define('DB_PORT', '5432');
-define('DB_NAME', 'supreme_court_cms');
-define('DB_USER', 'postgres');
-define('DB_PASS', 'postgres');
-
-// Error reporting – turn off in production
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
-// Sessions
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-date_default_timezone_set('UTC');
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=supreme_court_cms
+DB_USER=postgres
+DB_PASS=postgres
+AT_USERNAME=sandbox
+AT_API_KEY=replace-with-africa-talking-key
+DATABASE_URL=postgresql://user:password@host:5432/database
 ```
+
+The configuration file loads that file into the PHP process environment before using `DATABASE_URL` or `DB_*` variables. Do not commit the `.env` file.
 
 ---
 
-## 🔌 3. Database Connection — `config/database.php`
+## 🔌 3. Database Connection — runtime bootstrap
+
+The database bootstrap in the repo reads the configured environment values and creates a `PDO` connection from them. If the environment value is unreachable, the project falls back to a safe object rather than throwing a fatal route exception.
 
 ```php
 <?php
 require_once __DIR__ . '/config.php';
 
-function db(): PDO
-{
-    static $pdo = null;
-    if ($pdo === null) {
-        $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', DB_HOST, DB_PORT, DB_NAME);
-        try {
-            $pdo = new PDO($dsn, DB_USER, DB_PASS, [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-            ]);
-        } catch (PDOException $e) {
-            die('Database connection failed: ' . htmlspecialchars($e->getMessage()));
-        }
-    }
-    return $pdo;
+$pdo = null;
+$primaryDsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME;
+
+try {
+    $pdo = new PDO($primaryDsn, DB_USER, DB_PASS);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    $_SESSION['db_error'] = 'Database unavailable. Set DATABASE_URL or DB_* environment variables.';
 }
 ```
 
